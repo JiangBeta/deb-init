@@ -5,15 +5,41 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_SUBDIR="$SCRIPT_DIR/scripts"
+GITHUB_RAW_URL="https://raw.githubusercontent.com/JiangBeta/deb-init/refs/heads/main/scripts"
+
+# 创建scripts目录（如果不存在）
+mkdir -p "$SCRIPTS_SUBDIR"
+
+# 下载并执行脚本
+download_and_run_script() {
+    local script_name=$1
+    local script_path="$SCRIPTS_SUBDIR/$script_name"
+    
+    # 如果脚本不存在，从GitHub下载
+    if [ ! -f "$script_path" ]; then
+        log_info "正在从GitHub下载脚本: $script_name"
+        if ! curl -sSL "$GITHUB_RAW_URL/$script_name" -o "$script_path"; then
+            log_error "下载脚本失败: $script_name"
+            return 1
+        fi
+        chmod +x "$script_path"
+    fi
+    
+    # 执行脚本
+    "$script_path"
+    return $?
+}
+
+# 首先下载通用函数脚本
+if [ ! -f "$SCRIPTS_SUBDIR/common_functions.sh" ]; then
+    curl -sSL "$GITHUB_RAW_URL/common_functions.sh" -o "$SCRIPTS_SUBDIR/common_functions.sh"
+fi
 
 # shellcheck source=./scripts/common_functions.sh
 source "$SCRIPTS_SUBDIR/common_functions.sh" # 加载通用函数，特别是日志和SUDO_CMD
 
-# 确保脚本目录下的所有 .sh 文件都有执行权限
-find "$SCRIPTS_SUBDIR" -name "*.sh" -exec chmod +x {} \;
-
 # 运行环境准备脚本
-"$SCRIPTS_SUBDIR/00_prepare_env.sh" || exit 1
+download_and_run_script "00_prepare_env.sh" || exit 1
 
 
 show_menu() {
@@ -45,43 +71,43 @@ execute_selection() {
     local choice=$1
     case $choice in
         1)
-            "$SCRIPTS_SUBDIR/01_system_init.sh"
+            download_and_run_script "01_system_init.sh"
             ;;
         2)
-            "$SCRIPTS_SUBDIR/02_ssh_setup.sh"
+            download_and_run_script "02_ssh_setup.sh"
             ;;
         3)
-            "$SCRIPTS_SUBDIR/03_vim_setup.sh"
+            download_and_run_script "03_vim_setup.sh"
             ;;
         4)
-            "$SCRIPTS_SUBDIR/04_zsh_setup.sh"
+            download_and_run_script "04_zsh_setup.sh"
             ;;
         5)
             log_info "执行所有系统初始化步骤 (1-4)..."
-            "$SCRIPTS_SUBDIR/01_system_init.sh" && \
-            "$SCRIPTS_SUBDIR/02_ssh_setup.sh" && \
-            "$SCRIPTS_SUBDIR/03_vim_setup.sh" && \
-            "$SCRIPTS_SUBDIR/04_zsh_setup.sh"
+            download_and_run_script "01_system_init.sh" && \
+            download_and_run_script "02_ssh_setup.sh" && \
+            download_and_run_script "03_vim_setup.sh" && \
+            download_and_run_script "04_zsh_setup.sh"
             ;;
         11)
-            "$SCRIPTS_SUBDIR/11_docker_install_config.sh"
+            download_and_run_script "11_docker_install_config.sh"
             ;;
         12)
-            "$SCRIPTS_SUBDIR/12_docker_data_migrate.sh"
+            download_and_run_script "12_docker_data_migrate.sh"
             ;;
         13)
             log_info "执行所有 Docker 相关配置 (11-12)..."
-            "$SCRIPTS_SUBDIR/11_docker_install_config.sh" && \
-            "$SCRIPTS_SUBDIR/12_docker_data_migrate.sh" # 迁移是可选的，会在脚本内部询问
+            download_and_run_script "11_docker_install_config.sh" && \
+            download_and_run_script "12_docker_data_migrate.sh"
             ;;
         20)
             log_info "执行完整的系统初始化和 Docker 配置..."
-            "$SCRIPTS_SUBDIR/01_system_init.sh" && \
-            "$SCRIPTS_SUBDIR/02_ssh_setup.sh" && \
-            "$SCRIPTS_SUBDIR/03_vim_setup.sh" && \
-            "$SCRIPTS_SUBDIR/04_zsh_setup.sh" && \
-            "$SCRIPTS_SUBDIR/11_docker_install_config.sh" && \
-            "$SCRIPTS_SUBDIR/12_docker_data_migrate.sh" # 迁移是可选的
+            download_and_run_script "01_system_init.sh" && \
+            download_and_run_script "02_ssh_setup.sh" && \
+            download_and_run_script "03_vim_setup.sh" && \
+            download_and_run_script "04_zsh_setup.sh" && \
+            download_and_run_script "11_docker_install_config.sh" && \
+            download_and_run_script "12_docker_data_migrate.sh"
             ;;
         q|Q)
             log_info "退出脚本."
