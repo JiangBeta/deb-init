@@ -1,8 +1,16 @@
 #!/bin/bash
 
+# 设置日志文件路径
+BASE_DIR="/tmp/deb-init"
+LOG_FILE="$BASE_DIR/deb-init.log"
+
 SCRIPT_DIR_VIM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./common_functions.sh
 source "$SCRIPT_DIR_VIM/common_functions.sh"
+
+# 确保日志输出到文件
+exec 3>&1 4>&2
+exec 1> >(tee -a "$LOG_FILE") 2>&1
 
 log_info "阶段 1.1.6: Vim 配置开始..."
 
@@ -42,3 +50,6 @@ fi
 
 
 log_info "Vim 配置完成."
+
+# 恢复标准输出
+exec 1>&3 2>&4

@@ -1,8 +1,16 @@
 #!/bin/bash
 
+# 设置日志文件路径
+BASE_DIR="/tmp/deb-init"
+LOG_FILE="$BASE_DIR/deb-init.log"
+
 SCRIPT_DIR_ZSH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./common_functions.sh
 source "$SCRIPT_DIR_ZSH/common_functions.sh"
+
+# 确保日志输出到文件
+exec 3>&1 4>&2
+exec 1> >(tee -a "$LOG_FILE") 2>&1
 
 log_info "阶段 1.1.7: Zsh 和 Oh My Zsh 配置开始..."
 
@@ -201,3 +209,6 @@ fi
 
 log_info "Zsh 和 Oh My Zsh 配置完成."
 log_warn "您可能需要重新登录或启动新的终端会话 (或运行 'source $ZSHRC_PATH') 以使所有 Zsh 更改生效."
+
+# 恢复标准输出
+exec 1>&3 2>&4

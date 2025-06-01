@@ -1,8 +1,16 @@
 #!/bin/bash
 
+# 设置日志文件路径
+BASE_DIR="/tmp/deb-init"
+LOG_FILE="$BASE_DIR/deb-init.log"
+
 SCRIPT_DIR_DOCKER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./common_functions.sh
 source "$SCRIPT_DIR_DOCKER/common_functions.sh"
+
+# 确保日志输出到文件
+exec 3>&1 4>&2
+exec 1> >(tee -a "$LOG_FILE") 2>&1
 
 log_info "阶段 1.2.1 - 1.2.4: Docker 安装与配置开始..."
 
@@ -153,3 +161,6 @@ execute_command_sudo "重新加载 systemd daemon" systemctl daemon-reload
 execute_command_sudo "重启 Docker 服务" systemctl restart docker
 
 log_info "Docker 安装与配置完成."
+
+# 恢复标准输出
+exec 1>&3 2>&4

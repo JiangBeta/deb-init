@@ -1,8 +1,16 @@
 #!/bin/bash
 
+# 设置日志文件路径
+BASE_DIR="/tmp/deb-init"
+LOG_FILE="$BASE_DIR/deb-init.log"
+
 SCRIPT_DIR_PREPARE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./common_functions.sh
 source "$SCRIPT_DIR_PREPARE/common_functions.sh"
+
+# 确保日志输出到文件
+exec 3>&1 4>&2
+exec 1> >(tee -a "$LOG_FILE") 2>&1
 
 log_info "阶段 0: 准备环境..."
 
@@ -16,6 +24,7 @@ if ! check_command_installed curl && ! check_command_installed wget; then
     execute_command_sudo "安装 curl" apt-get install -y curl
     if ! check_command_installed curl; then
         log_error "安装 curl 失败. 请手动安装 curl 或 wget 后重试."
+        exec 1>&3 2>&4  # 恢复标准输出
         exit 1
     fi
 elif ! check_command_installed curl && check_command_installed wget; then
@@ -25,3 +34,6 @@ elif ! check_command_installed curl && check_command_installed wget; then
 fi
 
 log_info "环境准备完成."
+
+# 恢复标准输出
+exec 1>&3 2>&4

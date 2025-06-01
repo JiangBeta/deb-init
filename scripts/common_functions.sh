@@ -2,6 +2,13 @@
 
 # 通用函数库
 
+# 设置日志文件路径
+BASE_DIR="/tmp/deb-init"
+LOG_FILE="$BASE_DIR/deb-init.log"
+
+# 创建必要的目录
+mkdir -p "$BASE_DIR"
+
 # 全局SUDO命令和用户类型标志
 SUDO_CMD=""
 IS_ROOT=false
@@ -9,15 +16,15 @@ IS_ROOT=false
 # --- 日志函数 ---
 # 确保日志函数首先定义，以便在后续初始化逻辑中使用
 log_info() {
-    echo -e "\033[32m[INFO]\033[0m $1"
+    echo -e "\033[32m[INFO]\033[0m $1" | tee -a "$LOG_FILE"
 }
 
 log_warn() {
-    echo -e "\033[33m[WARN]\033[0m $1"
+    echo -e "\033[33m[WARN]\033[0m $1" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-    echo -e "\033[31m[ERROR]\033[0m $1"
+    echo -e "\033[31m[ERROR]\033[0m $1" | tee -a "$LOG_FILE"
 }
 # --- END 日志函数 ---
 
