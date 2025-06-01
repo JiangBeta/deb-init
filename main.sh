@@ -21,37 +21,42 @@ mkdir -p "$SCRIPTS_SUBDIR"
 # 保存原始的标准输出和错误输出
 exec 3>&1 4>&2
 
-log_with_date() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-}
-
 # 下载并执行脚本
 download_and_run_script() {
     local script_name=$1
     local script_path="$SCRIPTS_SUBDIR/$script_name"
-    
-    # 临时重定向到日志文件
-    exec 1> >(tee -a "$LOG_FILE") 2>&1
+    local timestamp
     
     # 如果脚本不存在，从GitHub下载
     if [ ! -f "$script_path" ]; then
-        log_with_date "正在从GitHub下载脚本: $script_name"
+        timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        printf "[%s] 正在从GitHub下载脚本: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
+        echo -e "\033[32m[INFO]\033[0m 正在从GitHub下载脚本: $script_name" >&3
         if ! curl -sSL "$GITHUB_RAW_URL/$script_name" -o "$script_path"; then
-            log_with_date "下载脚本失败: $script_name"
-            exec 1>&3 2>&4  # 恢复标准输出
+            timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+            printf "[%s] 下载脚本失败: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
+            echo -e "\033[31m[ERROR]\033[0m 下载脚本失败: $script_name" >&3
             return 1
         fi
         chmod +x "$script_path"
     fi
     
     # 执行脚本
-    log_with_date "开始执行脚本: $script_name"
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    printf "[%s] 开始执行脚本: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
+    echo -e "\033[32m[INFO]\033[0m 开始执行脚本: $script_name" >&3
+    
     "$script_path"
     local ret=$?
-    log_with_date "脚本 $script_name 执行完成，返回值: $ret"
     
-    # 恢复标准输出
-    exec 1>&3 2>&4
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    printf "[%s] 脚本 %s 执行完成，返回值: %d\n" "$timestamp" "$script_name" "$ret" >> "$LOG_FILE"
+    if [ $ret -eq 0 ]; then
+        echo -e "\033[32m[INFO]\033[0m 脚本 $script_name 执行完成" >&3
+    else
+        echo -e "\033[31m[ERROR]\033[0m 脚本 $script_name 执行失败，返回值: $ret" >&3
+    fi
+    
     return $ret
 }
 

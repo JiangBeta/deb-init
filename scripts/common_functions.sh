@@ -14,37 +14,36 @@ SUDO_CMD=""
 IS_ROOT=false
 
 # --- 日志函数 ---
-log_info() {
-    local msg="$1"
+# 统一的日志格式化函数
+format_log() {
+    local level=$1
+    local msg=$2
+    local color=$3
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    printf "[\033[32mINFO\033[0m] %s\n" "$msg" >&3
-    printf "[%s] INFO %s\n" "$timestamp" "$msg" >> "$LOG_FILE"
+    # 输出到终端（带颜色）
+    printf "[\033[${color}m${level}\033[0m] %s\n" "$msg" >&3
+    # 输出到日志文件（不带颜色，带时间戳）
+    printf "[%s] %s %s\n" "$timestamp" "$level" "$msg" >> "$LOG_FILE"
+}
+
+log_info() {
+    format_log "INFO" "$1" "32"
 }
 
 log_warn() {
-    local msg="$1"
-    local timestamp
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    printf "[\033[33mWARN\033[0m] %s\n" "$msg" >&3
-    printf "[%s] WARN %s\n" "$timestamp" "$msg" >> "$LOG_FILE"
+    format_log "WARN" "$1" "33"
 }
 
 log_error() {
-    local msg="$1"
-    local timestamp
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    printf "[\033[31mERROR\033[0m] %s\n" "$msg" >&3
-    printf "[%s] ERROR %s\n" "$timestamp" "$msg" >> "$LOG_FILE"
+    format_log "ERROR" "$1" "31"
 }
 
 # 直接写入日志文件的函数（不输出到终端）
 log_to_file() {
-    local level="$1"
-    local msg="$2"
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    printf "[%s] %s %s\n" "$timestamp" "$level" "$msg" >> "$LOG_FILE"
+    printf "[%s] %s %s\n" "$timestamp" "$1" "$2" >> "$LOG_FILE"
 }
 # --- END 日志函数 ---
 
