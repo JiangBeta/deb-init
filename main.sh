@@ -3,12 +3,26 @@
 # 主交互脚本
 # set -e # 命令失败时立即退出，子脚本会处理各自的错误
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPTS_SUBDIR="$SCRIPT_DIR/scripts"
+# 确保在远程执行时也能正常工作
+export TERM=xterm-256color
+
+# 设置基础目录
+BASE_DIR="/tmp/deb-init"
+SCRIPTS_SUBDIR="$BASE_DIR/scripts"
+LOG_FILE="$BASE_DIR/deb-init.log"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/JiangBeta/deb-init/refs/heads/main/scripts"
 
-# 创建scripts目录（如果不存在）
+# 创建必要的目录
 mkdir -p "$SCRIPTS_SUBDIR"
+
+# 初始化日志文件
+: > "$LOG_FILE"
+exec 3>&1 4>&2
+exec 1> >(tee -a "$LOG_FILE") 2>&1
+
+log_with_date() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
 
 # 下载并执行脚本
 download_and_run_script() {
@@ -17,18 +31,36 @@ download_and_run_script() {
     
     # 如果脚本不存在，从GitHub下载
     if [ ! -f "$script_path" ]; then
-        log_info "正在从GitHub下载脚本: $script_name"
+        log_with_date "正在从GitHub下载脚本: $script_name"
         if ! curl -sSL "$GITHUB_RAW_URL/$script_name" -o "$script_path"; then
-            log_error "下载脚本失败: $script_name"
+            log_with_date "下载脚本失败: $script_name"
             return 1
         fi
         chmod +x "$script_path"
     fi
     
     # 执行脚本
+    log_with_date "开始执行脚本: $script_name"
     "$script_path"
-    return $?
+    local ret=$?
+    log_with_date "脚本 $script_name 执行完成，返回值: $ret"
+    return $ret
 }
+
+# 清理函数
+cleanup() {
+    log_with_date "开始清理临时文件..."
+    exec 1>&3 2>&4  # 恢复标准输出和错误输出
+    if [ "$1" != "keep" ]; then
+        log_with_date "清理临时目录: $SCRIPTS_SUBDIR"
+        rm -rf "$SCRIPTS_SUBDIR"
+        log_with_date "完整日志已保存至: $LOG_FILE"
+    fi
+}
+
+# 注册清理函数
+trap 'cleanup' EXIT
+trap 'cleanup; exit 1' INT TERM
 
 # 首先下载通用函数脚本
 if [ ! -f "$SCRIPTS_SUBDIR/common_functions.sh" ]; then
