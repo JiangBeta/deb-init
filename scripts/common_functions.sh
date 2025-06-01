@@ -14,31 +14,37 @@ SUDO_CMD=""
 IS_ROOT=false
 
 # --- 日志函数 ---
-# 带时间戳的日志函数
-log_with_timestamp() {
-    local level=$1
-    local msg=$2
+log_info() {
+    local msg="$1"
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo -e "[$timestamp] $level $msg" >> "$LOG_FILE"
-    # 仅在终端显示彩色输出，不写入日志
-    case $level in
-        "INFO") echo -e "\033[32m[INFO]\033[0m $msg" ;;
-        "WARN") echo -e "\033[33m[WARN]\033[0m $msg" ;;
-        "ERROR") echo -e "\033[31m[ERROR]\033[0m $msg" ;;
-    esac
-}
-
-log_info() {
-    log_with_timestamp "INFO" "$1"
+    printf "[\033[32mINFO\033[0m] %s\n" "$msg" >&3
+    printf "[%s] INFO %s\n" "$timestamp" "$msg" >> "$LOG_FILE"
 }
 
 log_warn() {
-    log_with_timestamp "WARN" "$1"
+    local msg="$1"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    printf "[\033[33mWARN\033[0m] %s\n" "$msg" >&3
+    printf "[%s] WARN %s\n" "$timestamp" "$msg" >> "$LOG_FILE"
 }
 
 log_error() {
-    log_with_timestamp "ERROR" "$1"
+    local msg="$1"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    printf "[\033[31mERROR\033[0m] %s\n" "$msg" >&3
+    printf "[%s] ERROR %s\n" "$timestamp" "$msg" >> "$LOG_FILE"
+}
+
+# 直接写入日志文件的函数（不输出到终端）
+log_to_file() {
+    local level="$1"
+    local msg="$2"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    printf "[%s] %s %s\n" "$timestamp" "$level" "$msg" >> "$LOG_FILE"
 }
 # --- END 日志函数 ---
 
