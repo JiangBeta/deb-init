@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# 主交互脚本
+# set -e # 命令失败时立即退出，子脚本会处理各自的错误
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_SUBDIR="$SCRIPT_DIR/scripts"
+
+# shellcheck source=./scripts/common_functions.sh
+source "$SCRIPTS_SUBDIR/common_functions.sh" # 加载通用函数，特别是日志和SUDO_CMD
+
+# 确保脚本目录下的所有 .sh 文件都有执行权限
+find "$SCRIPTS_SUBDIR" -name "*.sh" -exec chmod +x {} \;
+
+# 运行环境准备脚本
+"$SCRIPTS_SUBDIR/00_prepare_env.sh" || exit 1
+
+
+show_menu() {
+    echo "===================================================="
+    echo "          系统初始化与环境部署脚本"
+    echo "===================================================="
+    echo "请选择要执行的任务:"
+    echo ""
+    echo "--- 系统初始化 ---"
+    echo "  1. 执行所有系统初始化步骤 (时区, locale, 源, 基础软件)"
+    echo "  2. 配置 SSH 服务"
+    echo "  3. 配置 Vim"
+    echo "  4. 配置 Zsh 和 Oh My Zsh"
+    echo "  5. 执行以上所有 (1-4)"
+    echo ""
+    echo "--- Docker 服务配置 ---"
+    echo "  11. 安装和基础配置 Docker (引擎, Compose, 镜像, 日志)"
+    echo "  12. 迁移 Docker 数据目录 (可选)"
+    echo "  13. 执行以上所有 Docker 相关 (11-12)"
+    echo ""
+    echo "--- 完整流程 ---"
+    echo "  20. 执行所有系统初始化和 Docker 完整配置 (5 + 13)"
+    echo ""
+    echo "  q. 退出脚本"
+    echo "===================================================="
+}
+
+execute_selection() {
+    local choice=$1
+    case $choice in
+        1)
+            "$SCRIPTS_SUBDIR/01_system_init.sh"
+            ;;
+        2)
+            "$SCRIPTS_SUBDIR/02_ssh_setup.sh"
+            ;;
+        3)
+            "$SCRIPTS_SUBDIR/03_vim_setup.sh"
+            ;;
+        4)
+            "$SCRIPTS_SUBDIR/04_zsh_setup.sh"
+            ;;
+        5)
+            log_info "执行所有系统初始化步骤 (1-4)..."
+            "$SCRIPTS_SUBDIR/01_system_init.sh" && \
+            "$SCRIPTS_SUBDIR/02_ssh_setup.sh" && \
+            "$SCRIPTS_SUBDIR/03_vim_setup.sh" && \
+            "$SCRIPTS_SUBDIR/04_zsh_setup.sh"
+            ;;
+        11)
+            "$SCRIPTS_SUBDIR/11_docker_install_config.sh"
+            ;;
+        12)
+            "$SCRIPTS_SUBDIR/12_docker_data_migrate.sh"
+            ;;
+        13)
+            log_info "执行所有 Docker 相关配置 (11-12)..."
+            "$SCRIPTS_SUBDIR/11_docker_install_config.sh" && \
+            "$SCRIPTS_SUBDIR/12_docker_data_migrate.sh" # 迁移是可选的，会在脚本内部询问
+            ;;
+        20)
+            log_info "执行完整的系统初始化和 Docker 配置..."
+            "$SCRIPTS_SUBDIR/01_system_init.sh" && \
+            "$SCRIPTS_SUBDIR/02_ssh_setup.sh" && \
+            "$SCRIPTS_SUBDIR/03_vim_setup.sh" && \
+            "$SCRIPTS_SUBDIR/04_zsh_setup.sh" && \
+            "$SCRIPTS_SUBDIR/11_docker_install_config.sh" && \
+            "$SCRIPTS_SUBDIR/12_docker_data_migrate.sh" # 迁移是可选的
+            ;;
+        q|Q)
+            log_info "退出脚本."
+            exit 0
+            ;;
+        *)
+            log_warn "无效的选项: $choice"
+            ;;
+    esac
+    # 检查上一个命令的退出状态，如果失败则提示
+    if [ $? -ne 0 ]; then
+        log_error "上一个操作执行失败. 请检查日志."
+    else
+        log_info "选择的操作执行完毕."
+    fi
+    echo ""
+    read -n 1 -s -r -p "按任意键返回主菜单..."
+}
+
+# 主循环
+while true; do
+    # shellcheck disable=SC2086 # $SUDO_CMD might be empty
+    $SUDO_CMD clear # 清屏，如果是sudo可能需要用户有权执行clear
+    show_menu
+    read -r -p "请输入您的选择: " user_choice
+    execute_selection "$user_choice"
+done
