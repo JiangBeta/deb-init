@@ -62,12 +62,12 @@ download_and_run_script() {
 
 # 清理函数
 cleanup() {
-    log_with_date "开始清理临时文件..."
+    log_info "开始清理临时文件..."
     exec 1>&3 2>&4  # 恢复标准输出和错误输出
     if [ "$1" != "keep" ]; then
-        log_with_date "清理临时目录: $SCRIPTS_SUBDIR"
+        log_info "清理临时目录: $SCRIPTS_SUBDIR"
         rm -rf "$SCRIPTS_SUBDIR"
-        log_with_date "完整日志已保存至: $LOG_FILE"
+        log_info "完整日志已保存至: $LOG_FILE"
     fi
 }
 
