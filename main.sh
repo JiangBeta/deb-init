@@ -17,8 +17,9 @@ mkdir -p "$SCRIPTS_SUBDIR"
 
 # 初始化日志文件
 : > "$LOG_FILE"
+
+# 保存原始的标准输出和错误输出
 exec 3>&1 4>&2
-exec 1> >(tee -a "$LOG_FILE") 2>&1
 
 log_with_date() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -29,11 +30,15 @@ download_and_run_script() {
     local script_name=$1
     local script_path="$SCRIPTS_SUBDIR/$script_name"
     
+    # 临时重定向到日志文件
+    exec 1> >(tee -a "$LOG_FILE") 2>&1
+    
     # 如果脚本不存在，从GitHub下载
     if [ ! -f "$script_path" ]; then
         log_with_date "正在从GitHub下载脚本: $script_name"
         if ! curl -sSL "$GITHUB_RAW_URL/$script_name" -o "$script_path"; then
             log_with_date "下载脚本失败: $script_name"
+            exec 1>&3 2>&4  # 恢复标准输出
             return 1
         fi
         chmod +x "$script_path"
@@ -44,6 +49,9 @@ download_and_run_script() {
     "$script_path"
     local ret=$?
     log_with_date "脚本 $script_name 执行完成，返回值: $ret"
+    
+    # 恢复标准输出
+    exec 1>&3 2>&4
     return $ret
 }
 
@@ -75,6 +83,8 @@ download_and_run_script "00_prepare_env.sh" || exit 1
 
 
 show_menu() {
+    # 确保菜单内容直接输出到终端，不写入日志
+    exec 1>&3 2>&4
     echo "===================================================="
     echo "          系统初始化与环境部署脚本"
     echo "===================================================="
@@ -149,11 +159,13 @@ execute_selection() {
             log_warn "无效的选项: $choice"
             ;;
     esac
-    # 检查上一个命令的退出状态，如果失败则提示
+    
+    # 检查执行结果并输出到终端
+    exec 1>&3 2>&4
     if [ $? -ne 0 ]; then
-        log_error "上一个操作执行失败. 请检查日志."
+        echo -e "\033[31m[ERROR]\033[0m 上一个操作执行失败. 请检查日志."
     else
-        log_info "选择的操作执行完毕."
+        echo -e "\033[32m[INFO]\033[0m 选择的操作执行完毕."
     fi
     echo ""
     read -n 1 -s -r -p "按任意键返回主菜单..."
@@ -161,8 +173,8 @@ execute_selection() {
 
 # 主循环
 while true; do
-    # shellcheck disable=SC2086 # $SUDO_CMD might be empty
-    $SUDO_CMD clear # 清屏，如果是sudo可能需要用户有权执行clear
+    exec 1>&3 2>&4  # 确保菜单输出到终端
+    $SUDO_CMD clear
     show_menu
     read -r -p "请输入您的选择: " user_choice
     execute_selection "$user_choice"

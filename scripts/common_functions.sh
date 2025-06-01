@@ -14,17 +14,31 @@ SUDO_CMD=""
 IS_ROOT=false
 
 # --- 日志函数 ---
-# 确保日志函数首先定义，以便在后续初始化逻辑中使用
+# 带时间戳的日志函数
+log_with_timestamp() {
+    local level=$1
+    local msg=$2
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "[$timestamp] $level $msg" >> "$LOG_FILE"
+    # 仅在终端显示彩色输出，不写入日志
+    case $level in
+        "INFO") echo -e "\033[32m[INFO]\033[0m $msg" ;;
+        "WARN") echo -e "\033[33m[WARN]\033[0m $msg" ;;
+        "ERROR") echo -e "\033[31m[ERROR]\033[0m $msg" ;;
+    esac
+}
+
 log_info() {
-    echo -e "\033[32m[INFO]\033[0m $1" | tee -a "$LOG_FILE"
+    log_with_timestamp "INFO" "$1"
 }
 
 log_warn() {
-    echo -e "\033[33m[WARN]\033[0m $1" | tee -a "$LOG_FILE"
+    log_with_timestamp "WARN" "$1"
 }
 
 log_error() {
-    echo -e "\033[31m[ERROR]\033[0m $1" | tee -a "$LOG_FILE"
+    log_with_timestamp "ERROR" "$1"
 }
 # --- END 日志函数 ---
 
