@@ -32,7 +32,7 @@ download_and_run_script() {
         timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         printf "[%s] 正在从GitHub下载脚本: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
         echo -e "\033[32m[INFO]\033[0m 正在从GitHub下载脚本: $script_name" >&3
-        if ! curl -sSL "$GITHUB_RAW_URL/$script_name" -o "$script_path"; then
+        if ! wget -q "$GITHUB_RAW_URL/$script_name" -O "$script_path"; then
             timestamp=$(date '+%Y-%m-%d %H:%M:%S')
             printf "[%s] 下载脚本失败: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
             echo -e "\033[31m[ERROR]\033[0m 下载脚本失败: $script_name" >&3
@@ -77,7 +77,7 @@ trap 'cleanup; exit 1' INT TERM
 
 # 首先下载通用函数脚本
 if [ ! -f "$SCRIPTS_SUBDIR/common_functions.sh" ]; then
-    curl -sSL "$GITHUB_RAW_URL/common_functions.sh" -o "$SCRIPTS_SUBDIR/common_functions.sh"
+    wget -q "$GITHUB_RAW_URL/common_functions.sh" -O "$SCRIPTS_SUBDIR/common_functions.sh"
 fi
 
 # shellcheck source=./scripts/common_functions.sh

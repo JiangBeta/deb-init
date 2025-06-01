@@ -33,7 +33,7 @@ fi
 # 关闭 pam 注册用户会话
 log_info "尝试关闭 pam_systemd.so 会话注册以加快 SSH 登录..."
 PAM_COMMON_SESSION_FILE="/etc/pam.d/common-session"
-PAM_SYSTEMD_LINE_PATTERN="^[[:space:]]*session[[:space:]]\+optional[[:space:]]\+pam_systemd\.so"
+PAM_SYSTEMD_LINE_PATTERN="^[[:space:]]*session[[:space:]]*optional[[:space:]]*pam_systemd\.so"
 
 if [ -f "$PAM_COMMON_SESSION_FILE" ]; then
     if grep -qE "$PAM_SYSTEMD_LINE_PATTERN" "$PAM_COMMON_SESSION_FILE"; then
@@ -45,7 +45,7 @@ if [ -f "$PAM_COMMON_SESSION_FILE" ]; then
             log_info "已注释 pam_systemd.so 以尝试加快SSH登录速度."
         fi
     else
-        log_info "未在 $PAM_COMMON_SESSION_FILE 中找到 pam_systemd.so 相关行."
+        log_warn "未在 $PAM_COMMON_SESSION_FILE 中找到 pam_systemd.so 相关行."
     fi
 else
     log_warn "$PAM_COMMON_SESSION_FILE 文件未找到, 跳过 pam_systemd.so 配置."
