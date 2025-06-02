@@ -99,7 +99,7 @@ log_info "1.1.4 安装基础软件..."
 BASE_PACKAGES=(
     sudo vim jq tmux curl git zsh locales gnupg2 lsb-release apt-transport-https
     ca-certificates iproute2-doc gawk dnsutils htop nfs-common pciutils btrfs-progs
-    fonts-wqy-zenhei
+    fonts-wqy-zenhei lua5.4
 )
 ensure_packages "${BASE_PACKAGES[@]}"
 
