@@ -91,7 +91,7 @@ else
 fi
 
 # 4. 更新 .zshrc
-ZSHRC_GIST_URL="https://gist.github.com/JiangBeta/1ccc2a827ac30cf7bf4dfc3d8830db54/raw/cd8e80332c80df1a780aa48d0f64c7f17ca7c36c/.zshrc"
+ZSHRC_GIST_URL="https://gist.github.com/JiangBeta/1ccc2a827ac30cf7bf4dfc3d8830db54/raw/886b8e6dd1ad2fecfb33068e324fa378906abca8/.zshrc"
 log_info "下载自定义 .zshrc 文件..."
 
 # 备份现有的 .zshrc
