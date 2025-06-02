@@ -16,7 +16,16 @@ log_info "阶段 1.1: 系统初始化开始..."
 
 # 1.1.1 设置时区时间
 log_info "1.1.1 设置时区为 Asia/Shanghai..."
-execute_command_sudo "设置时区" timedatectl set-timezone Asia/Shanghai
+if ! execute_command_sudo "设置时区" timedatectl set-timezone Asia/Shanghai; then
+    log_warn "timedatectl 设置时区失败，尝试直接修改时区文件..."
+    if [ -f "/usr/share/zoneinfo/Asia/Shanghai" ]; then
+        execute_command_sudo "备份当前时区文件" cp -f /etc/localtime /etc/localtime.backup
+        execute_command_sudo "设置时区文件" ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        log_info "已通过文件链接方式设置时区为 Asia/Shanghai"
+    else
+        log_error "无法找到时区文件，请手动设置时区"
+    fi
+fi
 
 log_info "配置NTP服务使用 ntp1.aliyun.com..."
 NTP_CONF_FILE="/etc/systemd/timesyncd.conf"
