@@ -31,30 +31,24 @@ download_and_run_script() {
     if [ ! -f "$script_path" ]; then
         timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         printf "[%s] 正在从GitHub下载脚本: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
-        echo -e "\033[32m[INFO]\033[0m 正在从GitHub下载脚本: $script_name" >&3
+        log_info "正在从GitHub下载脚本: $script_name"
         if ! wget -q "$GITHUB_RAW_URL/$script_name" -O "$script_path"; then
-            timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-            printf "[%s] 下载脚本失败: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
-            echo -e "\033[31m[ERROR]\033[0m 下载脚本失败: $script_name" >&3
+            log_error "下载脚本失败: $script_name"
             return 1
         fi
         chmod +x "$script_path"
     fi
     
     # 执行脚本
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    printf "[%s] 开始执行脚本: %s\n" "$timestamp" "$script_name" >> "$LOG_FILE"
-    echo -e "\033[32m[INFO]\033[0m 开始执行脚本: $script_name" >&3
+    log_info "开始执行脚本: $script_name"
     
     "$script_path"
     local ret=$?
     
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    printf "[%s] 脚本 %s 执行完成，返回值: %d\n" "$timestamp" "$script_name" "$ret" >> "$LOG_FILE"
     if [ $ret -eq 0 ]; then
-        echo -e "\033[32m[INFO]\033[0m 脚本 $script_name 执行完成" >&3
+        log_success "脚本 $script_name 执行完成"
     else
-        echo -e "\033[31m[ERROR]\033[0m 脚本 $script_name 执行失败，返回值: $ret" >&3
+        log_error "脚本 $script_name 执行失败，返回值: $ret"
     fi
     
     return $ret
@@ -90,28 +84,26 @@ download_and_run_script "00_prepare_env.sh" || exit 1
 show_menu() {
     # 确保菜单内容直接输出到终端，不写入日志
     exec 1>&3 2>&4
-    echo "===================================================="
-    echo "          系统初始化与环境部署脚本"
-    echo "===================================================="
-    echo "请选择要执行的任务:"
+    print_title "系统初始化与环境部署脚本"
+    print_color "36" "请选择要执行的任务:" # 青色
     echo ""
-    echo "--- 系统初始化 ---"
-    echo "  1. 执行所有系统初始化步骤 (时区, locale, 源, 基础软件)"
-    echo "  2. 配置 SSH 服务"
-    echo "  3. 配置 Vim"
-    echo "  4. 配置 Zsh 和 Oh My Zsh"
-    echo "  5. 执行以上所有 (1-4)"
+    print_color "35" "--- 系统初始化 ---" # 紫色
+    print_color "37" "  1. 执行所有系统初始化步骤 (时区, locale, 源, 基础软件)"
+    print_color "37" "  2. 配置 SSH 服务"
+    print_color "37" "  3. 配置 Vim"
+    print_color "37" "  4. 配置 Zsh 和 Oh My Zsh"
+    print_color "37" "  5. 执行以上所有 (1-4)"
     echo ""
-    echo "--- Docker 服务配置 ---"
-    echo "  11. 安装和基础配置 Docker (引擎, Compose, 镜像, 日志)"
-    echo "  12. 迁移 Docker 数据目录 (可选)"
-    echo "  13. 执行以上所有 Docker 相关 (11-12)"
+    print_color "35" "--- Docker 服务配置 ---" # 紫色
+    print_color "37" "  11. 安装和基础配置 Docker (引擎, Compose, 镜像, 日志)"
+    print_color "37" "  12. 迁移 Docker 数据目录 (可选)"
+    print_color "37" "  13. 执行以上所有 Docker 相关 (11-12)"
     echo ""
-    echo "--- 完整流程 ---"
-    echo "  20. 执行所有系统初始化和 Docker 完整配置 (5 + 13)"
+    print_color "35" "--- 完整流程 ---" # 紫色
+    print_color "37" "  20. 执行所有系统初始化和 Docker 完整配置 (5 + 13)"
     echo ""
-    echo "  q. 退出脚本"
-    echo "===================================================="
+    print_color "33" "  q. 退出脚本" # 黄色
+    print_separator "=" 50
 }
 
 execute_selection() {
@@ -168,12 +160,12 @@ execute_selection() {
     # 检查执行结果并输出到终端
     exec 1>&3 2>&4
     if [ $? -ne 0 ]; then
-        echo -e "\033[31m[ERROR]\033[0m 上一个操作执行失败. 请检查日志."
+        log_error "上一个操作执行失败. 请检查日志."
     else
-        echo -e "\033[32m[INFO]\033[0m 选择的操作执行完毕."
+        log_success "选择的操作执行完毕."
     fi
     echo ""
-    read -n 1 -s -r -p "按任意键返回主菜单..."
+    read -n 1 -s -r -p "$(print_color "36" "按任意键返回主菜单...")" # 青色
 }
 
 # 主循环
@@ -181,6 +173,6 @@ while true; do
     exec 1>&3 2>&4  # 确保菜单输出到终端
     $SUDO_CMD clear
     show_menu
-    read -r -p "请输入您的选择: " user_choice
+    read -r -p "$(print_color "36" "请输入您的选择: ")" user_choice # 青色
     execute_selection "$user_choice"
 done

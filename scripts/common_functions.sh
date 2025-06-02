@@ -2,6 +2,20 @@
 
 # 通用函数库
 
+# 定义颜色常量
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[0;37m'
+NC='\033[0m' # No Color
+
+# 定义样式常量
+BOLD='\033[1m'
+UNDERLINE='\033[4m'
+
 # 设置日志文件路径
 BASE_DIR="/tmp/deb-init"
 LOG_FILE="$BASE_DIR/deb-init.log"
@@ -18,25 +32,29 @@ IS_ROOT=false
 format_log() {
     local level=$1
     local msg=$2
-    local color=$3
+    local color_code=$3
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     # 输出到终端（带颜色）
-    printf "[\033[${color}m${level}\033[0m] %s\n" "$msg" >&3
+    printf "[${BOLD}\033[${color_code}m%s${NC}] %s\n" "$level" "$msg" >&3
     # 输出到日志文件（不带颜色，带时间戳）
     printf "[%s] %s %s\n" "$timestamp" "$level" "$msg" >> "$LOG_FILE"
 }
 
 log_info() {
-    format_log "INFO" "$1" "32"
+    format_log "INFO" "$1" "32" # 绿色
 }
 
 log_warn() {
-    format_log "WARN" "$1" "33"
+    format_log "WARN" "$1" "33" # 黄色
 }
 
 log_error() {
-    format_log "ERROR" "$1" "31"
+    format_log "ERROR" "$1" "31" # 红色
+}
+
+log_success() {
+    format_log "SUCCESS" "$1" "32" # 绿色
 }
 
 # 直接写入日志文件的函数（不输出到终端）
@@ -46,6 +64,36 @@ log_to_file() {
     printf "[%s] %s %s\n" "$timestamp" "$1" "$2" >> "$LOG_FILE"
 }
 # --- END 日志函数 ---
+
+# --- 文本美化函数 ---
+# 打印带颜色的文本
+print_color() {
+    local color_code=$1
+    local text=$2
+    printf "\033[${color_code}m%s${NC}\n" "$text" >&3
+}
+
+# 打印标题
+print_title() {
+    local title_text="$1"
+    local border_char="="
+    local title_length=${#title_text}
+    local border_length=$((title_length + 10)) # 标题两边各留5个字符
+
+    printf "${BOLD}${CYAN}" >&3
+    printf "%${border_length}s\n" "" | tr ' ' "$border_char" >&3
+    printf "%*s%s%*s\n" $(( (border_length - title_length) / 2 )) "" "$title_text" $(( (border_length - title_length + 1) / 2 )) "" >&3
+    printf "%${border_length}s\n" "" | tr ' ' "$border_char" >&3
+    printf "${NC}\n" >&3
+}
+
+# 打印分隔线
+print_separator() {
+    local char="${1:-=}" # 默认使用等号
+    local length="${2:-50}" # 默认长度50
+    printf "${CYAN}%${length}s${NC}\n" "" | tr ' ' "$char" >&3
+}
+# --- END 文本美化函数 ---
 
 
 # --- Sudo 和用户检查 ---
