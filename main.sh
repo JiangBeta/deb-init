@@ -6,20 +6,28 @@
 # 确保在远程执行时也能正常工作
 export TERM=xterm-256color
 
+echo "DEBUG: 脚本开始执行." >> /tmp/debug_main.log
+
 # 设置基础目录
 BASE_DIR="/tmp/deb-init"
 SCRIPTS_SUBDIR="$BASE_DIR/scripts"
 LOG_FILE="$BASE_DIR/deb-init.log"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/JiangBeta/deb-init/refs/heads/main/scripts"
 
+echo "DEBUG: BASE_DIR=$BASE_DIR" >> /tmp/debug_main.log
+echo "DEBUG: SCRIPTS_SUBDIR=$SCRIPTS_SUBDIR" >> /tmp/debug_main.log
+
 # 创建必要的目录
 mkdir -p "$SCRIPTS_SUBDIR"
+echo "DEBUG: 目录 $SCRIPTS_SUBDIR 创建完成." >> /tmp/debug_main.log
 
 # 初始化日志文件
 : > "$LOG_FILE"
+echo "DEBUG: 日志文件 $LOG_FILE 初始化完成." >> /tmp/debug_main.log
 
 # 保存原始的标准输出和错误输出
 exec 3>&1 4>&2
+echo "DEBUG: 标准输出和错误输出已保存." >> /tmp/debug_main.log
 
 # 下载并执行脚本
 download_and_run_script() {
@@ -70,15 +78,22 @@ trap 'cleanup' EXIT
 trap 'cleanup; exit 1' INT TERM
 
 # 首先下载通用函数脚本
+echo "DEBUG: 检查 common_functions.sh." >> /tmp/debug_main.log
 if [ ! -f "$SCRIPTS_SUBDIR/common_functions.sh" ]; then
+    echo "DEBUG: common_functions.sh 不存在，开始下载." >> /tmp/debug_main.log
     wget -q "$GITHUB_RAW_URL/common_functions.sh" -O "$SCRIPTS_SUBDIR/common_functions.sh"
+    echo "DEBUG: common_functions.sh 下载完成." >> /tmp/debug_main.log
 fi
 
 # shellcheck source=./scripts/common_functions.sh
+echo "DEBUG: 正在加载 common_functions.sh." >> /tmp/debug_main.log
 source "$SCRIPTS_SUBDIR/common_functions.sh" # 加载通用函数，特别是日志和SUDO_CMD
+echo "DEBUG: common_functions.sh 加载完成." >> /tmp/debug_main.log
 
 # 运行环境准备脚本
+echo "DEBUG: 正在运行 00_prepare_env.sh." >> /tmp/debug_main.log
 download_and_run_script "00_prepare_env.sh" || exit 1
+echo "DEBUG: 00_prepare_env.sh 执行完成." >> /tmp/debug_main.log
 
 
 show_menu() {
@@ -169,6 +184,7 @@ execute_selection() {
 }
 
 # 主循环
+echo "DEBUG: 进入主循环." >> /tmp/debug_main.log
 while true; do
     exec 1>&3 2>&4  # 确保菜单输出到终端
     $SUDO_CMD clear
